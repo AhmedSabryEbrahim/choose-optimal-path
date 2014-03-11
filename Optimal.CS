@@ -84,8 +84,23 @@ namespace TestTheAlgo
             }
             return ArrNodes[Elem].EF;
         }
+        public int recusion1(int Elem)
+        {
+            if (Elem >= ArrNodes.Length || Elem == -1) return 0;
+            else
+            {
+                for (int i = 0; i < ArrNodes[Elem].Depndances.Length; i++)
+                {
+                    ArrNodes[Elem].ES = Math.Max(ArrNodes[Elem].ES, recusion1(ArrNodes[Elem].DepInt[i]));
+                    ArrNodes[Elem].EF = ArrNodes[Elem].ES + ArrNodes[Elem].Duration;
+                }
+            }
+            return ArrNodes[Elem].EF;
+        }
         public void Calculate()
         {
+            bool[] visited = new bool[ArrNodes.Length];
+            for (int i = 0; i < visited.Length; i++) visited[i] = true;
             Node LastNode = new Node(); int pos = 0;
             for (int i = 0; i < ArrNodes.Length; i++)
             {
@@ -93,17 +108,31 @@ namespace TestTheAlgo
                 {
                     recusion(i);
                 }
-                if (LastNode.EF < ArrNodes[i].EF) {
+                foreach (int item in ArrNodes[i].DepInt)
+                {
+                    if(item!=-1)visited[item] = false;
+                }
+                if (LastNode.EF < ArrNodes[i].EF)
+                {
                     LastNode = ArrNodes[i];
                 }
             }
-            Console.WriteLine(LastNode);
+            List<int> ArrList = new List<int>();
+            for (int i = 0; i < visited.Length; i++)
+            {
+                if (visited[i] == true)
+                {
+                    ArrList.Add(i);
+                    ArrNodes[i].LF = LastNode.EF;
+                    ArrNodes[i].LS = ArrNodes[i].LF - ArrNodes[i].Duration;
+                }
+            }
         }
         public AlgorithmOnNode()
         {
             string str = readFun();
             string[] ArrStr = SplitString<string>(str, '\n');
-            ArrNodes = GetInput<string>(ArrStr); 
+            ArrNodes = GetInput<string>(ArrStr);
             foreach (Node Item in ArrNodes)
             {
                 Item.ModifyNode();
