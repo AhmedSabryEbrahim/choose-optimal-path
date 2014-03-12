@@ -8,11 +8,18 @@ namespace TestTheAlgo
 {
     class Node
     {
-        public int ES = -1, LS, EF, LF, Duration, Slack;
+        public int ES = -1, LS = 99999999, EF, LF = 99999999, Duration, Slack;
         public bool onCriticalBath;
         public string NodeName;
         public string[] Depndances;
         public int[] DepInt;
+        public List<int> BackDep = new List<int>();
+        public void copyNode(Node Copied) {
+            this.LS = Copied.ES;
+            this.EF = Copied.EF;
+            this.LF = Copied.EF;
+            this.ES = Copied.ES;
+        }
         public void ModifyNode()
         {
             DepInt = new int[Depndances.Length];
@@ -26,12 +33,12 @@ namespace TestTheAlgo
         public override string ToString()
         {
             string str = NodeName;
-            str += " " + Duration;
-            str += " " + ES + " " + EF + " " + LS + " " + LF + " ";
-            foreach (int item in DepInt)
+           // str += " " + Duration;
+            str +=/* " " + ES + " " + EF +*/ " " + LS + " " + LF + " ";
+            foreach (int item in BackDep)
             {
-                if (item != -1)
-                    str += " " + (char)(item + 'A');
+             //   if (item != -1)
+               //     str += " " + (char)(item + 'A');
             }
             return str;
         }
@@ -51,7 +58,7 @@ namespace TestTheAlgo
     }
     class AlgorithmOnNode
     {
-        Node[] ArrNodes;
+        List<Node> ArrNodes;
         string readFun()
         {
             String line = "";
@@ -60,7 +67,6 @@ namespace TestTheAlgo
                 using (StreamReader sr = new StreamReader("TestFile.txt"))
                 {
                     line = sr.ReadToEnd();
-                    //  Console.WriteLine(line);
                 }
             }
             catch (Exception e)
@@ -73,7 +79,7 @@ namespace TestTheAlgo
 
         public int recusion(int Elem)
         {
-            if (Elem >= ArrNodes.Length || Elem == -1) return 0;
+            if (Elem >= ArrNodes.Count || Elem == -1) return 0;
             else
             {
                 for (int i = 0; i < ArrNodes[Elem].Depndances.Length; i++)
@@ -86,7 +92,7 @@ namespace TestTheAlgo
         }
         public int recusion1(int Elem)
         {
-            if (Elem >= ArrNodes.Length || Elem == -1) return 0;
+            if (Elem >= ArrNodes.Count || Elem == -1) return 0;
             else
             {
                 for (int i = 0; i < ArrNodes[Elem].Depndances.Length; i++)
@@ -99,18 +105,24 @@ namespace TestTheAlgo
         }
         public void Calculate()
         {
-            bool[] visited = new bool[ArrNodes.Length];
+            bool[] visited = new bool[ArrNodes.Count];
             for (int i = 0; i < visited.Length; i++) visited[i] = true;
             Node LastNode = new Node(); int pos = 0;
-            for (int i = 0; i < ArrNodes.Length; i++)
+            for (int i = 0; i < ArrNodes.Count; i++)
             {
                 if (ArrNodes[i].ES == -1)
                 {
                     recusion(i);
+                }//Back Dependences 
+                for (int j = 0; j < ArrNodes[i].DepInt.Length; j++) {
+                    if (ArrNodes[i].DepInt[j] != -1)
+                    {
+                        ArrNodes[i].BackDep.Add(ArrNodes[i].DepInt[j]);
+                    }
                 }
                 foreach (int item in ArrNodes[i].DepInt)
                 {
-                    if(item!=-1)visited[item] = false;
+                    if (item != -1) visited[item] = false;
                 }
                 if (LastNode.EF < ArrNodes[i].EF)
                 {
@@ -118,6 +130,8 @@ namespace TestTheAlgo
                 }
             }
             List<int> ArrList = new List<int>();
+            ArrNodes.Add(new Node());
+            ArrNodes[ArrNodes.Count-1].copyNode(LastNode);
             for (int i = 0; i < visited.Length; i++)
             {
                 if (visited[i] == true)
@@ -125,8 +139,21 @@ namespace TestTheAlgo
                     ArrList.Add(i);
                     ArrNodes[i].LF = LastNode.EF;
                     ArrNodes[i].LS = ArrNodes[i].LF - ArrNodes[i].Duration;
+                    ArrNodes[ArrNodes.Count - 1].BackDep.Add(i);
                 }
             }
+            for (int i = ArrNodes.Count-1; i >= 0; i--)
+            {
+                for (int j = 0; j < ArrNodes[i].BackDep.Count; j++) {
+                    if (ArrNodes[ArrNodes[i].BackDep[j]].LF > ArrNodes[i].LS && ArrNodes[i].LS >= ArrNodes[i].Duration)
+                    {
+                        ArrNodes[ArrNodes[i].BackDep[j]].LF = ArrNodes[i].LS;
+                        ArrNodes[ArrNodes[i].BackDep[j]].LS = ArrNodes[ArrNodes[i].BackDep[j]].LF - ArrNodes[ArrNodes[i].BackDep[j]].Duration;
+                    }
+                }
+            }
+
+            ArrNodes[ArrNodes.Count - 1].NodeName = "End";
         }
         public AlgorithmOnNode()
         {
@@ -140,7 +167,7 @@ namespace TestTheAlgo
             Calculate();
             foreach (Node Item in ArrNodes)
             {
-                Console.WriteLine(Item);
+               Console.WriteLine(Item);
             }
         }
         public T[] SplitString<T>(string str, char delimiterChars)
@@ -165,15 +192,15 @@ namespace TestTheAlgo
             }
             return sb.ToString();
         }
-        public Node[] GetInput<T>(string[] str)
+        public List<Node> GetInput<T>(string[] str)
         {
             int N = str.Length, index;
             string[] TMP;
-            Node[] Nodes = new Node[N];
+            List<Node> Nodes = new List<Node>();
             for (int i = 0; i < N; i++)
             {
                 index = 0;
-                Nodes[i] = new Node();
+                Nodes.Add(new Node());
                 TMP = SplitString<string>(str[i], ' ');
                 Nodes[i].NodeName = TMP[index++];
                 Nodes[i].Depndances = SplitString<string>(TMP[1], ',');
